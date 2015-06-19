@@ -1,4 +1,4 @@
-# marionette-windows-builder
+# marionette-windows
 
 ```console
 git clone git@github.com:kpdyer/marionette-windows-builder.git
