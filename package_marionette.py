@@ -5,6 +5,10 @@ import marionette_windows.util
 
 marionette_windows.util.debug = True
 
+# The goal here is to create a single zipfile with
+# all exes, dlls, etc. required to run marionette_client.exe
+# and marionette_server.exe on modern windows.
+
 def build_exes():
     os.chdir(
         os.path.join(os.getenv('BUILDDIR'), 'marionette')

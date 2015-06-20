@@ -107,6 +107,8 @@ class InitWineTask(BaseTask):
 
 
 class InstallPythonTask(BaseTask):
+    # Do an install of Python 2.7.5 from the MSI.
+
     def do_task(self):
         file_path = marionette_windows.util.download_file(
             'https://www.python.org/ftp/python/2.7.5/python-2.7.5.msi')
@@ -124,6 +126,8 @@ class InstallPythonTask(BaseTask):
 
 
 class InstallSetuptoolsTask(BaseTask):
+    # Install setuptools from source, required for py2exe
+
     def do_task(self):
         file_path = marionette_windows.util.download_file(
             'https://pypi.python.org/packages/source/s/setuptools/setuptools-17.1.1.tar.gz')
@@ -141,6 +145,10 @@ class InstallSetuptoolsTask(BaseTask):
 
 
 class InstallPy2EXETask(BaseTask):
+    # Install py2exe, required to build wine-wrappers
+    # We can't build py2exe from source, b/c that would require
+    # the wine-wrappers. Maybe there's a better way?
+
     def do_task(self):
         os.chdir(os.getenv('BUILDDIR'))
         marionette_windows.util.execute(
@@ -163,6 +171,10 @@ class InstallPy2EXETask(BaseTask):
 
 
 class InstallWineWrappers(BaseTask):
+    # The wine wrappers are needed to expose gcc/g++/etc
+    # to our Python build env. This creates gcc.exe, and
+    # under the hood calls our mingw compiler.
+
     def do_task(self):
         os.chdir(os.getenv('BUILDDIR'))
         marionette_windows.util.execute(
@@ -186,6 +198,8 @@ class InstallWineWrappers(BaseTask):
 
 
 class InstallDlfcnTask(BaseTask):
+    # Required for openfst
+
     def do_task(self):
         dir_path = marionette_windows.util.git_clone(
             'https://github.com/dlfcn-win32/dlfcn-win32.git')
@@ -204,6 +218,8 @@ class InstallDlfcnTask(BaseTask):
 
 
 class InstallMmanTask(BaseTask):
+    # Required for re2
+
     def do_task(self):
         dir_path = marionette_windows.util.svn_checkout(
             'http://mman-win32.googlecode.com/svn/trunk', 'mman-win32')
@@ -227,6 +243,8 @@ class InstallMmanTask(BaseTask):
 
 
 class InstallRegex2DFATask_openfst(BaseTask):
+    # Building openfst from regex2dfa
+
     def do_task(self):
         dir_path = marionette_windows.util.git_clone(
             'https://github.com/kpdyer/regex2dfa.git')
@@ -252,6 +270,10 @@ class InstallRegex2DFATask_openfst(BaseTask):
                          'third_party/openfst/src/lib/.libs/libfst.a'))
 
 class InstallRegex2DFATask_re2(BaseTask):
+    # This is messy, but we use a win32 version of re2
+    # and patch it to use our compilers. It doesn't provide
+    # a way to override and ignores CC, CXX env. variables, etc.
+
     def do_task(self):
         os.chdir(os.getenv('BUILDDIR'))
         marionette_windows.util.execute(
@@ -285,6 +307,9 @@ class InstallRegex2DFATask_re2(BaseTask):
                          'third_party/re2/obj/libre2.a'))
 
 class InstallRegex2DFATask(BaseTask):
+    # This is messy, we probably want to turn it into a single patch
+    # Comments inline
+
     def do_task(self):
         dir_path = marionette_windows.util.git_clone(
             'https://github.com/kpdyer/regex2dfa.git')
@@ -293,24 +318,38 @@ class InstallRegex2DFATask(BaseTask):
         marionette_windows.util.execute(
             './configure --prefix=$INSTDIR/regex2dfa')
         if not os.path.exists('regex2dfa.patched'):
+            # pthread is optional, disabling reduces features in regex2dfa
             marionette_windows.util.execute(
                 'sed -i \'s/-pthread//g\' Makefile')
+
+            # make sure we have our POSIX libs included directly
             marionette_windows.util.execute(
                 'sed -i \'s/-ldl/-ldl -lmman -lpsapi/g\' Makefile')
+
+            # regex2dfa hardcodes ar
             marionette_windows.util.execute(
                 'sed -i \'s/ ar / $(AR) /g\' Makefile')
+
+            # stdint is required under mingw for unint32_t
             marionette_windows.util.execute(
                 'sed -i \'s/#include <Python.h>/#include <Python.h>\\n#include <stdint.h>/g\' src/cRegex2dfa.cc')
+
+            # these hardening flags don't work under mingw
             marionette_windows.util.execute(
                 'sed -i "s/\'-fstack-protector-all\',//g" setup.py')
             marionette_windows.util.execute(
                 'sed -i "s/\'-D_FORTIFY_SOURCE\',//g" setup.py')
             marionette_windows.util.execute(
                 'sed -i "s/\'-fPIE\',//g" setup.py')
+
+            # regex2dfa setup.py libs are all messed up and hardcoded
             marionette_windows.util.execute(
                 'sed -i "s/\'python2.7\',/\'mman\',\'dl\',\'psapi\'/g" setup.py')
             marionette_windows.util.execute(
                 'sed -i "s/library_dirs=\[\'\.libs\'\],/library_dirs=[\'.libs\',\'\/home\/vagrant\/install\/mingw\/lib\'],/g" setup.py')
+
+            # kept getting really weird timing issues, required so make for regex2dfa
+            # doesn't try to make its included copy of re2
             marionette_windows.util.execute(
                 'touch $BUILDDIR/regex2dfa/third_party/re2/obj/libre2.a')
             marionette_windows.util.execute(
@@ -332,6 +371,8 @@ class InstallRegex2DFATask(BaseTask):
         return (retcode == 0)
 
 class InstallGMPTask(BaseTask):
+    # easy: build/install GMP under mingw
+
     def do_task(self):
         file_path = marionette_windows.util.download_file(
             'http://ftp.gnu.org/gnu/gmp/gmp-6.0.0a.tar.bz2')
@@ -351,6 +392,8 @@ class InstallGMPTask(BaseTask):
 
 
 class InstallPyCryptoTask(BaseTask):
+    # easy: build/install pycrypto under mingw
+
     def do_task(self):
         file_path = marionette_windows.util.download_file(
             'https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.1.tar.gz')
@@ -369,12 +412,12 @@ class InstallPyCryptoTask(BaseTask):
 
 
 class InstallFTETask(BaseTask):
+    # easy: build/install FTE under mingw
+
     def do_task(self):
         dir_path = marionette_windows.util.git_clone(
             'https://github.com/kpdyer/libfte.git')
         os.chdir(dir_path)
-        #marionette_windows.util.execute(
-        #    'ln -s $INSTDIR/gmp thirdparty/gmp')
         marionette_windows.util.execute(
             'LD_PRELOAD= WINDOWS_BUILD=1 CROSS_COMPILE=1 PYTHON=$INSTPYTHON make')
         marionette_windows.util.execute(
@@ -392,6 +435,8 @@ class InstallFTETask(BaseTask):
 
 
 class InstallMarionetteTask(BaseTask):
+    # finally: build/install marionette under mingw
+
     def do_task(self):
         dir_path = marionette_windows.util.git_clone(
             'https://github.com/redjack/marionette.git')
