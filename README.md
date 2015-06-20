@@ -19,7 +19,7 @@ $ vagrant up
 ... wait ...
 
 $ ls -al dist
-$ marionette-latest.zip
+marionette-latest.zip
 ```
 
 dependencies
