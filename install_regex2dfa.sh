@@ -1,10 +1,3 @@
-R2DDIR=regex2dfa
-cd $BUILDDIR
-if [ ! -e $R2DDIR ]
-then
-  git clone https://github.com/kpdyer/regex2dfa.git
-fi
-
 cd $VAGRANTDIR
 patch -R build/regex2dfa/third_party/openfst/src/lib/mapped-file.cc openfst.patch
 
@@ -35,7 +28,7 @@ sed -i "s/'-D_FORTIFY_SOURCE',//g" setup.py
 sed -i "s/'-fPIE',//g" setup.py
 sed -i "s/'python2.7',/'mman','dl','psapi'/g" setup.py
 sed -i "s/library_dirs=\['\.libs'\],/library_dirs=['.libs','\/home\/vagrant\/install\/mingw\/lib'],/g" setup.py
-#find -type f -print0 | xargs -0 touch --date="$FAKETIME"
+
 touch $BUILDDIR/regex2dfa/third_party/re2/obj/libre2.a
 make 
 LD_PRELOAD= $INSTPYTHON setup.py build_ext -c mingw32

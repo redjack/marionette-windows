@@ -145,9 +145,6 @@ class InstallPy2EXETask(BaseTask):
         os.chdir(os.getenv('BUILDDIR'))
         marionette_windows.util.execute(
             'cp ../thirdparty/py2exe-0.6.9.win32-py2.7.exe .')
-
-        os.chdir(os.path.dirname(file_path))
-        file_name = os.path.basename(file_path)
         marionette_windows.util.execute(
             '7z x %s' % file_name)
         retval = marionette_windows.util.execute(
@@ -216,7 +213,7 @@ class InstallMmanTask(BaseTask):
             './configure --cc=i686-w64-mingw32-gcc --cross-prefix=i686-w64-mingw32-'
             ' --prefix=$INSTDIR/mingw'
             ' --libdir=$INSTDIR/mingw/lib'
-            ' --incdir=$INSTDIR/mingw/include'
+            ' --incdir=$INSTDIR/mingw/include/sys'
         )
         marionette_windows.util.execute('make')
         marionette_windows.util.execute('make install')
@@ -226,7 +223,113 @@ class InstallMmanTask(BaseTask):
 
     def is_successful(self):
         return os.path.exists(
-            os.path.join(os.getenv('INSTDIR'),'mingw','include','mman.h'))
+            os.path.join(os.getenv('INSTDIR'),'mingw','include','sys','mman.h'))
+
+
+class InstallRegex2DFATask_openfst(BaseTask):
+    def do_task(self):
+        dir_path = marionette_windows.util.git_clone(
+            'https://github.com/kpdyer/regex2dfa.git')
+        os.chdir(dir_path)
+
+        marionette_windows.util.execute(
+            'patch -R third_party/openfst/src/lib/mapped-file.cc ../../patches/openfst.patch')
+
+        os.chdir('third_party/openfst')
+        marionette_windows.util.execute(
+            './configure CFLAGS=\'-fPIC\' CXXFLAGS=\'-fPIC\' --enable-bin --enable-static --disable-shared --host=i686-w64-mingw32')
+        marionette_windows.util.execute(
+            'sed -i \'s/-lm -ldl/-lm -ldl -lmman -lpsapi/g\' src/bin/Makefile')
+        marionette_windows.util.execute(
+            'make')
+
+    def get_desc(self):
+        return 'Installing regex2dfa.openfst'
+
+    def is_successful(self):
+        return os.path.exists(
+            os.path.join(os.getenv('BUILDDIR'),'regex2dfa',
+                         'third_party/openfst/src/lib/.libs/libfst.a'))
+
+class InstallRegex2DFATask_re2(BaseTask):
+    def do_task(self):
+        os.chdir(os.getenv('BUILDDIR'))
+        marionette_windows.util.execute(
+            'cp ../thirdparty/re2-20110930-src-win32.zip .')
+        if not os.path.exists('re2'):
+            marionette_windows.util.execute(
+                'unzip re2-20110930-src-win32.zip')
+            marionette_windows.util.execute(
+                'cp $BUILDDIR/../patches/re2-*.patch .')
+            marionette_windows.util.execute(
+                'patch --verbose -p0 -i re2-core.patch')
+            marionette_windows.util.execute(
+                'patch --verbose -p0 -i re2-mingw.patch')
+        os.chdir('re2')
+        marionette_windows.util.execute(
+            'make obj/libre2.a')
+        os.makedirs(
+            os.path.join(
+                os.getenv('BUILDDIR'),
+                'regex2dfa/third_party/re2/obj'))
+        marionette_windows.util.execute(
+            'cp $BUILDDIR/re2/obj/libre2.a'
+              ' $BUILDDIR/regex2dfa/third_party/re2/obj')
+
+    def get_desc(self):
+        return 'Installing regex2dfa.re2'
+
+    def is_successful(self):
+        return os.path.exists(
+            os.path.join(os.getenv('BUILDDIR'),'regex2dfa',
+                         'third_party/re2/obj/libre2.a'))
+
+class InstallRegex2DFATask(BaseTask):
+    def do_task(self):
+        dir_path = marionette_windows.util.git_clone(
+            'https://github.com/kpdyer/regex2dfa.git')
+        os.chdir(dir_path)
+
+        marionette_windows.util.execute(
+            './configure --prefix=$INSTDIR/regex2dfa')
+        if not os.path.exists('regex2dfa.patched'):
+            marionette_windows.util.execute(
+                'sed -i \'s/-pthread//g\' Makefile')
+            marionette_windows.util.execute(
+                'sed -i \'s/-ldl/-ldl -lmman -lpsapi/g\' Makefile')
+            marionette_windows.util.execute(
+                'sed -i \'s/ ar / $(AR) /g\' Makefile')
+            marionette_windows.util.execute(
+                'sed -i \'s/#include <Python.h>/#include <Python.h>\\n#include <stdint.h>/g\' src/cRegex2dfa.cc')
+            marionette_windows.util.execute(
+                'sed -i "s/\'-fstack-protector-all\',//g" setup.py')
+            marionette_windows.util.execute(
+                'sed -i "s/\'-D_FORTIFY_SOURCE\',//g" setup.py')
+            marionette_windows.util.execute(
+                'sed -i "s/\'-fPIE\',//g" setup.py')
+            marionette_windows.util.execute(
+                'sed -i "s/\'python2.7\',/\'mman\',\'dl\',\'psapi\'/g" setup.py')
+            marionette_windows.util.execute(
+                'sed -i "s/library_dirs=\[\'\.libs\'\],/library_dirs=[\'.libs\',\'\/home\/vagrant\/install\/mingw\/lib\'],/g" setup.py')
+            marionette_windows.util.execute(
+                'touch $BUILDDIR/regex2dfa/third_party/re2/obj/libre2.a')
+            marionette_windows.util.execute(
+                'touch regex2dfa.patched')
+        marionette_windows.util.execute(
+            'make')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= $INSTPYTHON setup.py build_ext -c mingw32')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= $INSTPYTHON setup.py install')
+
+    def get_desc(self):
+        return 'Installing regex2dfa'
+
+    def is_successful(self):
+        os.chdir(os.getenv('VAGRANTDIR'))
+        retcode = marionette_windows.util.execute(
+            "LD_PRELOAD= $INSTPYTHON -c 'import regex2dfa'")
+        return (retcode == 0)
 
 class Generic(BaseTask):
     def do_task(self):

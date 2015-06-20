@@ -15,7 +15,10 @@ def main():
         #marionette_windows.tasks.InstallPy2EXETask,
         #marionette_windows.tasks.InstallWineWrappers,
         #marionette_windows.tasks.InstallDlfcnTask,
-        marionette_windows.tasks.InstallMmanTask,
+        #marionette_windows.tasks.InstallMmanTask,
+        marionette_windows.tasks.InstallRegex2DFATask_openfst,
+        marionette_windows.tasks.InstallRegex2DFATask_re2,
+        marionette_windows.tasks.InstallRegex2DFATask,
     ]
     for task in tasks_to_do:
         task_obj = task()

@@ -5,7 +5,6 @@ source ./setenv.sh
 
 python build_marionette.py
 
-cd $VAGRANTDIR && source ./install_regex2dfa.sh
 cd $VAGRANTDIR && source ./install_gmp.sh
 cd $VAGRANTDIR && source ./install_pycrypto.sh
 cd $VAGRANTDIR && source ./install_fte.sh
