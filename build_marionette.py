@@ -3,7 +3,7 @@ import sys
 
 import marionette_windows.tasks
 
-marionette_windows.util.debug = True
+marionette_windows.util.debug = False
 
 def main():
     if not os.getenv('BUILDDIR'):

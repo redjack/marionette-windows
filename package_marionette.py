@@ -3,7 +3,7 @@ import sys
 
 import marionette_windows.util
 
-marionette_windows.util.debug = True
+marionette_windows.util.debug = False
 
 # The goal here is to create a single zipfile with
 # all exes, dlls, etc. required to run marionette_client.exe
@@ -71,6 +71,10 @@ def make_package():
 def main():
     if not os.getenv('BUILDDIR'):
         print 'Are you sure your envs are set? Run \'source setenv.sh\' in /vagrant.'
+        sys.exit(1)
+    if not os.path.exists(
+            os.path.join(os.getenv('BUILDDIR'),'marionette/dist/marionette.zip')):
+        print 'Looks like marionette hasn\'t been built yet.'
         sys.exit(1)
 
     build_exes()

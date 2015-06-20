@@ -419,6 +419,9 @@ class InstallFTETask(BaseTask):
             'https://github.com/kpdyer/libfte.git')
         os.chdir(dir_path)
         marionette_windows.util.execute(
+            'ln -s $INSTDIR/gmp thirdparty/gmp'
+        )
+        marionette_windows.util.execute(
             'LD_PRELOAD= WINDOWS_BUILD=1 CROSS_COMPILE=1 PYTHON=$INSTPYTHON make')
         marionette_windows.util.execute(
             'LD_PRELOAD= $INSTPYTHON setup.py install')
