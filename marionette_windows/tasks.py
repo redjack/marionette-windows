@@ -146,7 +146,7 @@ class InstallPy2EXETask(BaseTask):
         marionette_windows.util.execute(
             'cp ../thirdparty/py2exe-0.6.9.win32-py2.7.exe .')
         marionette_windows.util.execute(
-            '7z x %s' % file_name)
+            '7z x py2exe-0.6.9.win32-py2.7.exe')
         retval = marionette_windows.util.execute(
             'cp -a PLATLIB/* $INSTDIR/python/Lib/site-packages/')
 
@@ -331,12 +331,79 @@ class InstallRegex2DFATask(BaseTask):
             "LD_PRELOAD= $INSTPYTHON -c 'import regex2dfa'")
         return (retcode == 0)
 
-class Generic(BaseTask):
+class InstallGMPTask(BaseTask):
     def do_task(self):
-        pass
+        file_path = marionette_windows.util.download_file(
+            'http://ftp.gnu.org/gnu/gmp/gmp-6.0.0a.tar.bz2')
+        marionette_windows.util.configure_install(
+            file_path,
+            'LD_PRELOAD=/usr/lib/faketime/libfaketime.so.1 ./configure --prefix=$INSTDIR/gmp --host=i686-w64-mingw32 --enable-cxx --disable-static --enable-shared')
+        marionette_windows.util.execute(
+            'cp -a $INSTDIR/gmp/bin/libgmp-10.dll $WINEROOT/windows/system32/')
 
     def get_desc(self):
-        return 'Installing setuptools'
+        return 'Installing GMP'
 
     def is_successful(self):
-        pass
+        return os.path.exists(
+            os.path.join(os.getenv('INSTDIR'),
+                         'gmp/bin/libgmp-10.dll'))
+
+
+class InstallPyCryptoTask(BaseTask):
+    def do_task(self):
+        file_path = marionette_windows.util.download_file(
+            'https://ftp.dlitz.net/pub/dlitz/crypto/pycrypto/pycrypto-2.6.1.tar.gz')
+        marionette_windows.util.python_package_install(
+            file_path,
+            'ac_cv_func_malloc_0_nonnull=yes sh configure --host=i686-w64-mingw32')
+
+    def get_desc(self):
+        return 'Installing pycrypto'
+
+    def is_successful(self):
+        os.chdir(os.getenv('VAGRANTDIR'))
+        retcode = marionette_windows.util.execute(
+            "LD_PRELOAD= $INSTPYTHON -c 'import Crypto'")
+        return (retcode == 0)
+
+
+class InstallFTETask(BaseTask):
+    def do_task(self):
+        dir_path = marionette_windows.util.git_clone(
+            'https://github.com/kpdyer/libfte.git')
+        os.chdir(dir_path)
+        #marionette_windows.util.execute(
+        #    'ln -s $INSTDIR/gmp thirdparty/gmp')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= WINDOWS_BUILD=1 CROSS_COMPILE=1 PYTHON=$INSTPYTHON make')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= $INSTPYTHON setup.py install')
+
+    def get_desc(self):
+        return 'Installing FTE'
+
+    def is_successful(self):
+        os.chdir(os.getenv('VAGRANTDIR'))
+        retcode = marionette_windows.util.execute(
+            "LD_PRELOAD= $INSTPYTHON -c 'import fte'")
+        return (retcode == 0)
+
+
+
+class InstallMarionetteTask(BaseTask):
+    def do_task(self):
+        dir_path = marionette_windows.util.git_clone(
+            'https://github.com/redjack/marionette.git')
+        os.chdir(dir_path)
+        marionette_windows.util.execute(
+            'LD_PRELOAD= $INSTPYTHON setup.py install')
+
+    def get_desc(self):
+        return 'Installing marionette'
+
+    def is_successful(self):
+        os.chdir(os.getenv('VAGRANTDIR'))
+        retcode = marionette_windows.util.execute(
+            "LD_PRELOAD= $INSTPYTHON -c 'import marionette_tg'")
+        return (retcode == 0)

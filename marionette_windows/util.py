@@ -79,7 +79,7 @@ def msi_install(msi_path, dst_dir):
     return retval
 
 
-def python_package_install(file_path):
+def python_package_install(file_path, configure_cmd=None):
     if debug:
         print ' - python package install: "%s"' % file_path
 
@@ -90,6 +90,8 @@ def python_package_install(file_path):
     else:
         execute('tar xvf %s %s' % (file_path, dst_dir))
     os.chdir(dst_dir)
+    if configure_cmd:
+        execute(configure_cmd)
     execute(
         'LD_PRELOAD= $INSTPYTHON setup.py build_ext -c mingw32')
     retval = execute(
@@ -97,9 +99,30 @@ def python_package_install(file_path):
 
     return retval
 
+
+def configure_install(file_path, configure_cmd):
+    if debug:
+        print ' - configure install: "%s"' % file_path
+
+    dst_dir = remove_extension(file_path)
+    os.chdir(os.path.dirname(file_path))
+    if file_path.endswith('.zip'):
+        execute('unzip %s' % (file_path))
+    else:
+        create_directory(dst_dir)
+        execute('tar xvf %s -C %s --strip-components=1' % (file_path, dst_dir))
+    os.chdir(dst_dir)
+    execute(configure_cmd)
+    execute('make')
+    retval = execute('make install')
+
+    return retval
+
 def remove_extension(file_path):
     retval = os.path.basename(file_path)
-    retval = string.replace(retval, '.tar.gz','')
+    retval = string.replace(retval, '.tar','')
+    retval = string.replace(retval, '.gz','')
+    retval = string.replace(retval, '.bz2','')
     retval = string.replace(retval, '.zip','')
     retval = string.replace(retval, '.git','')
     return retval
