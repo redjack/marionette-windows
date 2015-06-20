@@ -2,7 +2,5 @@
 
 cd /vagrant
 source ./setenv.sh
-
-python build_marionette.py
-
-cd $VAGRANTDIR && source ./package_marionette.sh
+cd $VAGRANTDIR && python build_marionette.py
+cd $VAGRANTDIR && python package_marionette.py
