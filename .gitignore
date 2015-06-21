@@ -2,4 +2,5 @@
 *.pyc
 .idea
 .vagrant
-build/*
+build
+dist
