@@ -39,6 +39,7 @@ def main():
         actually_ran = False
         desc = task_obj.get_desc()
         success = task_obj.is_successful()
+        sys.stdout.write(desc + ' ... ')
         if not success:
             task_obj.do_task()
             actually_ran = True
@@ -46,9 +47,9 @@ def main():
         if (not actually_ran and success) or task_obj.is_successful():
             suffix = ''
             if not actually_ran: suffix = ' [cached]'
-            print desc + ' ... ' + 'done' + suffix
+            print 'done' + suffix
         else:
-            print desc + ' ... ' + 'failed'
+            print 'failed'
             sys.exit(1)
 
         sys.stdout.flush()
