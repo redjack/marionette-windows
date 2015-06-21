@@ -40,6 +40,7 @@ def main():
         desc = task_obj.get_desc()
         success = task_obj.is_successful()
         sys.stdout.write(desc + ' ... ')
+        sys.stdout.flush()
         if not success:
             task_obj.do_task()
             actually_ran = True
