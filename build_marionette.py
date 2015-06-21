@@ -10,6 +10,10 @@ def main():
         print 'Are you sure your envs are set? Run \'source setenv.sh\' in /vagrant.'
         sys.exit(1)
 
+    print """*******
+* Starting Marionette build process
+*******"""
+
     tasks_to_do = [
         marionette_windows.tasks.MakeBinDirTask,
         marionette_windows.tasks.MakeLibDirTask,
