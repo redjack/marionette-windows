@@ -47,7 +47,7 @@ def main():
         if (not actually_ran and success) or task_obj.is_successful():
             suffix = ''
             if not actually_ran: suffix = ' [cached]'
-            print 'done' + suffix
+            print 'success' + suffix
         else:
             print 'failed'
             sys.exit(1)
