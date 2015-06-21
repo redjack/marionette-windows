@@ -72,8 +72,11 @@ def main():
     if not os.getenv('BUILDDIR'):
         print 'Are you sure your envs are set? Run \'source setenv.sh\' in /vagrant.'
         sys.exit(1)
-    if not os.path.exists(
-            os.path.join(os.getenv('BUILDDIR'),'marionette/dist/marionette.zip')):
+
+    os.chdir(os.getenv('VAGRANTDIR'))
+    retcode = marionette_windows.util.execute(
+        "LD_PRELOAD= $INSTPYTHON -c 'import marionette_tg'")
+    if (retcode != 0):
         print 'Looks like marionette hasn\'t been built yet.'
         sys.exit(1)
 
