@@ -83,5 +83,12 @@ def main():
     build_exes()
     make_package()
 
+    marionette_zip = os.path.join(os.getenv('VAGRANTDIR'), 'dist',
+                     'marionette-latest.zip')
+    if os.path.exists(marionette_zip):
+        print '**** SUCCESS: zipfile located at:', marionette_zip
+    else:
+        print '!!!! Somethinge went wrong, we failed to make the zipfile...check marionette_windows.log"
+
 if __name__ == '__main__':
     main()
