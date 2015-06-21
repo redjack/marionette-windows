@@ -22,6 +22,10 @@ $ ls -al dist
 marionette-latest.zip
 ```
 
+Upon success, the ```vagrant up``` command should produce a zipfile in ```dist/marionette-latest.zip``` which has all the dependencies (.pyc, .pyd, .dll files) required to run marionette, and two binaries ```marionette_client.exe``` and ```marionette_server.exe```.
+
+In the build machines ```bootstrap.sh``` is executed which invokes ```build_marionette.py``` and ```package_marionette.py```. These two scripts install marionette in the VM and create the zip.
+
 dependencies
 ------------
 
