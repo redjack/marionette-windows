@@ -33,8 +33,9 @@ dependencies
 * An Ubuntu box. This has been tested with version 20150611.0.0 of ```ubuntu/precise32```, provided by hashicorp.
   * To install use ```vagrant box add ubuntu/precise32```
 
-important notes
----------------
+important scripts
+-----------------
 
 * *build_marionette.py* runs all tasks in marionette_windows.tasks that are required to run marionette.
 * *package_marrionete.py* once we have all deps. installed, this will create a zip with all the dependencies and our exes.
+* *marionette_windows/tasks.py* has all of the tasks we run. ```do_task``` has the logic for each task (create dir, compile somthing, etc.) and ```is_successful``` checks if ```do_task``` completeled properly.

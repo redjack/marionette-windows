@@ -88,7 +88,7 @@ def main():
     if os.path.exists(marionette_zip):
         print '**** SUCCESS: zipfile located at:', marionette_zip
     else:
-        print '!!!! Somethinge went wrong, we failed to make the zipfile...check marionette_windows.log"
+        print '!!!! Somethinge went wrong, we failed to make the zipfile...check marionette_windows.log'
 
 if __name__ == '__main__':
     main()
