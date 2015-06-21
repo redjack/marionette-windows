@@ -47,5 +47,7 @@ def main():
             print desc + ' ... ' + 'failed'
             sys.exit(1)
 
+        sys.stdout.flush()
+
 if __name__ == "__main__":
     main()
