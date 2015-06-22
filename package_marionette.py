@@ -45,13 +45,19 @@ def make_package():
         'cp ../marionette_tg/marionette.conf marionette_tg/'
     )
     marionette_windows.util.execute(
-        'cp /home/vagrant/install/python/Lib/site-packages/marionette_tg-0.0.1.post6-py2.7.egg/marionette_tg/parsetab.* marionette_tg'
+        'cp /home/vagrant/install/python/Lib/site-packages/marionette_tg-0.0.1.post6-py2.7.egg/marionette_tg/parse* marionette_tg'
     )
     marionette_windows.util.execute(
-        'zip -q -9 -r marionette.zip marionette_tg/parsetab.pyc'
+        'cp ../marionette_tg/dsl.py marionette_tg/'
     )
     marionette_windows.util.execute(
-        'rm marionette_tg/parsetab.*'
+        'zip -q -9 -r marionette.zip marionette_tg/parse*'
+    )
+    marionette_windows.util.execute(
+        'zip -q -9 -r marionette.zip marionette_tg/*.py'
+    )
+    marionette_windows.util.execute(
+        'rm -rfv marionette_tg/parse* ply'
     )
     marionette_windows.util.execute(
         'zip -r marionette-latest.zip *'
