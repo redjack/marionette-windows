@@ -13,7 +13,8 @@ def build_exes():
     os.chdir(
         os.path.join(os.getenv('BUILDDIR'), 'marionette')
     )
-    os.makedirs('build/bdist.win32/winexe/bundle-2.7')
+    if not os.path.exists('build/bdist.win32/winexe/bundle-2.7'):
+        os.makedirs('build/bdist.win32/winexe/bundle-2.7')
     marionette_windows.util.execute(
         'cp -a /home/vagrant/install/python/python27.dll build/bdist.win32/winexe/bundle-2.7/'
     )
