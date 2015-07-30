@@ -410,6 +410,30 @@ class InstallPyCryptoTask(BaseTask):
             "LD_PRELOAD= $INSTPYTHON -c 'import Crypto'")
         return (retcode == 0)
 
+class InstallPyCurl(BaseTask):
+    # Install py2exe, required to build wine-wrappers
+    # We can't build py2exe from source, b/c that would require
+    # the wine-wrappers. Maybe there's a better way?
+
+    def do_task(self):
+        os.chdir(os.getenv('BUILDDIR'))
+        marionette_windows.util.execute(
+            'cp ../thirdparty/pycurl-7.19.5.1.win32-py2.7.exe .')
+        marionette_windows.util.execute(
+            '7z x pycurl-7.19.5.1.win32-py2.7.exe')
+        retval = marionette_windows.util.execute(
+            'cp -a PLATLIB/* $INSTDIR/python/Lib/site-packages/')
+
+        return retval
+
+    def get_desc(self):
+        return 'Installing pycurl'
+
+    def is_successful(self):
+        os.chdir(os.getenv('VAGRANTDIR'))
+        retcode = marionette_windows.util.execute(
+            "LD_PRELOAD= $INSTPYTHON -c 'import pycurl'")
+        return (retcode == 0)
 
 class InstallFTETask(BaseTask):
     # easy: build/install FTE under mingw

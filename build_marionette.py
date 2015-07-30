@@ -30,6 +30,7 @@ def main():
         marionette_windows.tasks.InstallRegex2DFATask,
         marionette_windows.tasks.InstallGMPTask,
         marionette_windows.tasks.InstallPyCryptoTask,
+        marionette_windows.tasks.InstallPyCurl,
         marionette_windows.tasks.InstallFTETask,
         marionette_windows.tasks.InstallMarionetteTask,
     ]
