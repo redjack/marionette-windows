@@ -36,9 +36,13 @@ def make_package():
     marionette_windows.util.execute(
         'cp /home/vagrant/install/python/python27.dll .'
     )
-    os.makedirs(
-        'marionette_tg/formats'
+    marionette_windows.util.execute(
+        'cp $BUILDDIR/PLATLIB/libcurl.dll .'
     )
+    if not os.path.exists('marionette_tg/formats'):
+        os.makedirs(
+            'marionette_tg/formats'
+        )
     marionette_windows.util.execute(
         'cp -rfv ../marionette_tg/formats/* marionette_tg/formats/'
     )
