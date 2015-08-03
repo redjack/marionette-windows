@@ -30,15 +30,19 @@ def make_package():
     os.chdir(
         os.path.join(os.getenv('BUILDDIR'), 'marionette', 'dist')
     )
-    marionette_windows.util.execute(
-        'cp /home/vagrant/install/gmp/bin/libgmp-10.dll .'
-    )
+
+    # we must have the python interpreter
     marionette_windows.util.execute(
         'cp /home/vagrant/install/python/python27.dll .'
     )
+
+    # we need to include libgmp-10.dll next to the exes
+    #   for FTE
     marionette_windows.util.execute(
-        'cp $BUILDDIR/PLATLIB/libcurl.dll .'
+        'cp /home/vagrant/install/gmp/bin/libgmp-10.dll .'
     )
+
+    # include all our formats
     if not os.path.exists('marionette_tg/formats'):
         os.makedirs(
             'marionette_tg/formats'
@@ -46,27 +50,64 @@ def make_package():
     marionette_windows.util.execute(
         'cp -rfv ../marionette_tg/formats/* marionette_tg/formats/'
     )
+
+    # include our marionette.conf file
     marionette_windows.util.execute(
         'cp ../marionette_tg/marionette.conf marionette_tg/'
     )
-    marionette_windows.util.execute(
-        'cp /home/vagrant/install/python/Lib/site-packages/marionette_tg-0.0.1.post6-py2.7.egg/marionette_tg/parse* marionette_tg'
-    )
+
+    # add dsl.py to marionette.zip, b/c it's required
+    #   for PLY to compile at runtime
     marionette_windows.util.execute(
         'cp ../marionette_tg/dsl.py marionette_tg/'
     )
     marionette_windows.util.execute(
-        'zip -q -9 -r marionette.zip marionette_tg/parse*'
+        'zip -q -9 -r marionette.zip marionette_tg/dsl.py'
     )
     marionette_windows.util.execute(
-        'zip -q -9 -r marionette.zip marionette_tg/*.py'
+        'rm marionette_tg/dsl.py'
+    )
+
+    # add {libcurl.dll,msvcr90.dll} to marionette.zip
+    marionette_windows.util.execute(
+        'cp $INSTDIR/python/Lib/site-packages/libcurl.dll .'
     )
     marionette_windows.util.execute(
-        'rm -rfv marionette_tg/parse* ply'
+        'cp $INSTDIR/python/msvcr90.dll .'
     )
+    marionette_windows.util.execute(
+        'zip -q -9 -r marionette.zip libcurl.dll'
+    )
+    marionette_windows.util.execute(
+        'zip -q -9 -r marionette.zip msvcr90.dll'
+    )
+    marionette_windows.util.execute(
+        'rm -f libcurl.dll msvcr90.dll'
+    )
+
+    # add regex2dfa/{psapi.dll,msvcr90.dll} to marionette.zip
+    marionette_windows.util.execute(
+        'mkdir regex2dfa'
+    )
+    marionette_windows.util.execute(
+        'cp $WINEROOT/windows/system32/psapi.dll regex2dfa/'
+    )
+    marionette_windows.util.execute(
+        'cp $INSTDIR/python/msvcr90.dll regex2dfa/'
+    )
+    marionette_windows.util.execute(
+        'zip -q -9 -r marionette.zip regex2dfa'
+    )
+    marionette_windows.util.execute(
+        'rm -rf regex2dfa'
+    )
+
+    # bundle all files into marionette-latest.zip
     marionette_windows.util.execute(
         'zip -r marionette-latest.zip *'
     )
+
+    # move marionette-latest.zip to our dist dir
     marionette_windows.util.execute(
         'mkdir -p $VAGRANTDIR/dist'
     )
