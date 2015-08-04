@@ -348,12 +348,19 @@ class InstallRegex2DFATask(BaseTask):
             marionette_windows.util.execute(
                 'sed -i "s/library_dirs=\[\'\.libs\'\],/library_dirs=[\'.libs\',\'\/home\/vagrant\/install\/mingw\/lib\'],/g" setup.py')
 
-            # kept getting really weird timing issues, required so make for regex2dfa
-            # doesn't try to make its included copy of re2
-            marionette_windows.util.execute(
-                'touch $BUILDDIR/regex2dfa/third_party/re2/obj/libre2.a')
+            # signal that we've patched regex2dfa
             marionette_windows.util.execute(
                 'touch regex2dfa.patched')
+
+            # ensure that libre2.a has a timestamp that's ahead
+            # of $(RE2_DIR)/util/logging.h.fixed
+            # this is a bug in regex2dfa, which manifests itself in how we do our build
+            # and reflects that logging.h.fixed is a dependency of libre2.a in regex2dfa's Makefile
+            marionette_windows.util.execute(
+                'touch $BUILDDIR/regex2dfa/third_party/re2/util/logging.h.fixed')
+            marionette_windows.util.execute(
+                'touch $BUILDDIR/regex2dfa/third_party/re2/obj/libre2.a')
+
         marionette_windows.util.execute(
             'make')
         marionette_windows.util.execute(
