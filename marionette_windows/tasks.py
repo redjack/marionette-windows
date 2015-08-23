@@ -3,6 +3,18 @@ import os
 import marionette_windows.util
 
 
+def clone_regex2dfa():
+    version = '351fc169facb3f8b43d2d10bbef826119328ff11'
+    dir_path = marionette_windows.util.git_clone(
+        'https://github.com/kpdyer/regex2dfa.git')
+    os.chdir(dir_path)
+
+    # Use the non-CFFI version of regex2dfa.git
+    marionette_windows.util.execute(
+        'git checkout %s' % version)
+    return dir_path
+
+
 class BaseTask(object):
     def do_task(self):
         assert False
@@ -246,9 +258,7 @@ class InstallRegex2DFATask_openfst(BaseTask):
     # Building openfst from regex2dfa
 
     def do_task(self):
-        dir_path = marionette_windows.util.git_clone(
-            'https://github.com/kpdyer/regex2dfa.git')
-        os.chdir(dir_path)
+        clone_regex2dfa()
 
         marionette_windows.util.execute(
             'patch -R third_party/openfst/src/lib/mapped-file.cc ../../patches/openfst.patch')
@@ -311,9 +321,7 @@ class InstallRegex2DFATask(BaseTask):
     # Comments inline
 
     def do_task(self):
-        dir_path = marionette_windows.util.git_clone(
-            'https://github.com/kpdyer/regex2dfa.git')
-        os.chdir(dir_path)
+        clone_regex2dfa()
 
         marionette_windows.util.execute(
             './configure --prefix=$INSTDIR/regex2dfa')
