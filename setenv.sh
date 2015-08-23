@@ -1,5 +1,5 @@
 export VAGRANTDIR="/vagrant"
-export BUILDDIR="/vagrant/build"
+export BUILDDIR="/vagrant/winbuild"
 export INSTDIR="$HOME/install"
 export INSTPYTHON="wine $INSTDIR/python/python.exe"
 export INSTPIP="wine $INSTDIR/python/Scripts/pip.exe"

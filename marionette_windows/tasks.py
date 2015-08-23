@@ -128,6 +128,11 @@ class InstallPythonTask(BaseTask):
             file_path, os.path.join(
                 os.path.join(os.getenv('INSTDIR'),'python')))
 
+        compiler_path = marionette_windows.util.download_file(
+            'http://download.microsoft.com/download/7/9/6/796EF2E4-801B-4FC4-AB28-B59FBF6D907B/VCForPython27.msi')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= msiexec /i %s' % compiler_path)
+
     def get_desc(self):
         return 'Installing Python'
 
@@ -142,7 +147,7 @@ class InstallSetuptoolsTask(BaseTask):
 
     def do_task(self):
         file_path = marionette_windows.util.download_file(
-            'https://pypi.python.org/packages/source/s/setuptools/setuptools-17.1.1.tar.gz')
+            'https://pypi.python.org/packages/source/s/setuptools/setuptools-18.2.tar.gz')
         marionette_windows.util.python_package_install(
             file_path)
 
@@ -338,24 +343,6 @@ class InstallRegex2DFATask(BaseTask):
             marionette_windows.util.execute(
                 'sed -i \'s/ ar / $(AR) /g\' Makefile')
 
-            # stdint is required under mingw for unint32_t
-            marionette_windows.util.execute(
-                'sed -i \'s/#include <Python.h>/#include <Python.h>\\n#include <stdint.h>/g\' src/cRegex2dfa.cc')
-
-            # these hardening flags don't work under mingw
-            marionette_windows.util.execute(
-                'sed -i "s/\'-fstack-protector-all\',//g" setup.py')
-            marionette_windows.util.execute(
-                'sed -i "s/\'-D_FORTIFY_SOURCE\',//g" setup.py')
-            marionette_windows.util.execute(
-                'sed -i "s/\'-fPIE\',//g" setup.py')
-
-            # regex2dfa setup.py libs are all messed up and hardcoded
-            marionette_windows.util.execute(
-                'sed -i "s/\'python2.7\',/\'mman\',\'dl\',\'psapi\'/g" setup.py')
-            marionette_windows.util.execute(
-                'sed -i "s/library_dirs=\[\'\.libs\'\],/library_dirs=[\'.libs\',\'\/home\/vagrant\/install\/mingw\/lib\'],/g" setup.py')
-
             # signal that we've patched regex2dfa
             marionette_windows.util.execute(
                 'touch regex2dfa.patched')
@@ -371,10 +358,21 @@ class InstallRegex2DFATask(BaseTask):
 
         marionette_windows.util.execute(
             'make')
+
+        # We built re2 and openfst ourselves, so we don't want regex2dfa to
+        # rebuild them.
         marionette_windows.util.execute(
-            'LD_PRELOAD= $INSTPYTHON setup.py build_ext -c mingw32')
+            "sed -i '/subprocess/d' setup.py")
+
+        # Use a relative path to regex2dfa.h
         marionette_windows.util.execute(
-            'LD_PRELOAD= $INSTPYTHON setup.py install')
+            'sed -i \'/^regex2dfa_header =/c\\regex2dfa_header = "src\/regex2dfa.h"\' regex2dfa_build.py')
+
+        # Use our built libraries and mingw
+        marionette_windows.util.execute(
+            'sed -i "s/library_dirs=\[\'\.libs\'\],/library_dirs=[\'.libs\',\'\/home\/vagrant\/install\/mingw\/lib\'],/g" regex2dfa_build.py')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= $INSTPYTHON setup.py build_ext -I . -l mman,dl,psapi -c mingw32 install')
 
     def get_desc(self):
         return 'Installing regex2dfa'
