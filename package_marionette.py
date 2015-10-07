@@ -18,12 +18,19 @@ def build_exes():
     marionette_windows.util.execute(
         'cp -a /home/vagrant/install/python/python27.dll build/bdist.win32/winexe/bundle-2.7/'
     )
-    marionette_windows.util.execute(
-        'LD_PRELOAD= $INSTPYTHON setup.py py2exe'
-    )
+    for script in ('bin/marionette_server', 'bin/marionette_client'):
+        marionette_windows.util.execute(
+            'LD_PRELOAD= $INSTPYTHON -m PyInstaller.main --onefile --clean ' +
+            '--hidden-import=zope.interface --hidden-import=_cffi_backend ' +
+            script
+        )
     assert os.path.exists(
         os.path.join(os.getenv('BUILDDIR'), 'marionette',
                      'dist', 'marionette_server.exe')
+    )
+    assert os.path.exists(
+        os.path.join(os.getenv('BUILDDIR'), 'marionette',
+                     'dist', 'marionette_client.exe')
     )
 
 def make_package():

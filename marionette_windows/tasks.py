@@ -4,12 +4,11 @@ import marionette_windows.util
 
 
 def clone_regex2dfa():
-    version = '351fc169facb3f8b43d2d10bbef826119328ff11'
+    version = 'master'
     dir_path = marionette_windows.util.git_clone(
         'https://github.com/kpdyer/regex2dfa.git')
     os.chdir(dir_path)
 
-    # Use the non-CFFI version of regex2dfa.git
     marionette_windows.util.execute(
         'git checkout %s' % version)
     return dir_path
@@ -119,7 +118,9 @@ class InitWineTask(BaseTask):
 
 
 class InstallPythonTask(BaseTask):
-    # Do an install of Python 2.7.5 from the MSI.
+    # Do an install of Python 2.7.5 from the MSI. Note that we CANNOT use
+    # Python 2.7.9 or newer because of an 'Empty certificate data' error
+    # ref: https://bugs.winehq.org/show_bug.cgi?id=38665
 
     def do_task(self):
         file_path = marionette_windows.util.download_file(
@@ -143,47 +144,43 @@ class InstallPythonTask(BaseTask):
 
 
 class InstallSetuptoolsTask(BaseTask):
-    # Install setuptools from source, required for py2exe
+    # Install setuptools and pip
 
     def do_task(self):
-        file_path = marionette_windows.util.download_file(
-            'https://pypi.python.org/packages/source/s/setuptools/setuptools-18.2.tar.gz')
-        marionette_windows.util.python_package_install(
-            file_path)
+        os.chdir(os.getenv('BUILDDIR'))
+        marionette_windows.util.download_file(
+            'https://bootstrap.pypa.io/get-pip.py')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= $INSTPYTHON get-pip.py')
 
     def get_desc(self):
-        return 'Installing setuptools'
+        return 'Installing pip/setuptools'
 
     def is_successful(self):
         os.chdir(os.getenv('VAGRANTDIR'))
         retcode = marionette_windows.util.execute(
-            "LD_PRELOAD= $INSTPYTHON -c 'import setuptools'")
+            "LD_PRELOAD= $INSTPYTHON -m pip --version")
         return (retcode == 0)
 
 
-class InstallPy2EXETask(BaseTask):
-    # Install py2exe, required to build wine-wrappers
-    # We can't build py2exe from source, b/c that would require
-    # the wine-wrappers. Maybe there's a better way?
+class InstallPyInstallerTask(BaseTask):
+    version = '3.0'
 
     def do_task(self):
         os.chdir(os.getenv('BUILDDIR'))
-        marionette_windows.util.execute(
-            'cp ../thirdparty/py2exe-0.6.9.win32-py2.7.exe .')
-        marionette_windows.util.execute(
-            '7z x py2exe-0.6.9.win32-py2.7.exe')
         retval = marionette_windows.util.execute(
-            'cp -a PLATLIB/* $INSTDIR/python/Lib/site-packages/')
+            'LD_PRELOAD= $INSTPYTHON -m pip install pypiwin32 '
+            'https://github.com/pyinstaller/pyinstaller/archive/%s.zip' % self.version)
 
         return retval
 
     def get_desc(self):
-        return 'Installing py2exe'
+        return 'Installing PyInstaller %s' % self.version
 
     def is_successful(self):
         os.chdir(os.getenv('VAGRANTDIR'))
         retcode = marionette_windows.util.execute(
-            "LD_PRELOAD= $INSTPYTHON -c 'import py2exe'")
+            'LD_PRELOAD= $INSTPYTHON -m PyInstaller --help')
         return (retcode == 0)
 
 
