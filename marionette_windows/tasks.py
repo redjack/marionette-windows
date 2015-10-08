@@ -4,12 +4,11 @@ import marionette_windows.util
 
 
 def clone_regex2dfa():
-    version = '351fc169facb3f8b43d2d10bbef826119328ff11'
+    version = 'master'
     dir_path = marionette_windows.util.git_clone(
         'https://github.com/kpdyer/regex2dfa.git')
     os.chdir(dir_path)
 
-    # Use the non-CFFI version of regex2dfa.git
     marionette_windows.util.execute(
         'git checkout %s' % version)
     return dir_path
@@ -119,7 +118,9 @@ class InitWineTask(BaseTask):
 
 
 class InstallPythonTask(BaseTask):
-    # Do an install of Python 2.7.5 from the MSI.
+    # Do an install of Python 2.7.5 from the MSI. Note that we CANNOT use
+    # Python 2.7.9 or newer because of an 'Empty certificate data' error
+    # ref: https://bugs.winehq.org/show_bug.cgi?id=38665
 
     def do_task(self):
         file_path = marionette_windows.util.download_file(
@@ -127,6 +128,11 @@ class InstallPythonTask(BaseTask):
         marionette_windows.util.msi_install(
             file_path, os.path.join(
                 os.path.join(os.getenv('INSTDIR'),'python')))
+
+        compiler_path = marionette_windows.util.download_file(
+            'http://download.microsoft.com/download/7/9/6/796EF2E4-801B-4FC4-AB28-B59FBF6D907B/VCForPython27.msi')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= msiexec /i %s' % compiler_path)
 
     def get_desc(self):
         return 'Installing Python'
@@ -138,47 +144,43 @@ class InstallPythonTask(BaseTask):
 
 
 class InstallSetuptoolsTask(BaseTask):
-    # Install setuptools from source, required for py2exe
+    # Install setuptools and pip
 
     def do_task(self):
-        file_path = marionette_windows.util.download_file(
-            'https://pypi.python.org/packages/source/s/setuptools/setuptools-17.1.1.tar.gz')
-        marionette_windows.util.python_package_install(
-            file_path)
+        os.chdir(os.getenv('BUILDDIR'))
+        marionette_windows.util.download_file(
+            'https://bootstrap.pypa.io/get-pip.py')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= $INSTPYTHON get-pip.py')
 
     def get_desc(self):
-        return 'Installing setuptools'
+        return 'Installing pip/setuptools'
 
     def is_successful(self):
         os.chdir(os.getenv('VAGRANTDIR'))
         retcode = marionette_windows.util.execute(
-            "LD_PRELOAD= $INSTPYTHON -c 'import setuptools'")
+            "LD_PRELOAD= $INSTPYTHON -m pip --version")
         return (retcode == 0)
 
 
-class InstallPy2EXETask(BaseTask):
-    # Install py2exe, required to build wine-wrappers
-    # We can't build py2exe from source, b/c that would require
-    # the wine-wrappers. Maybe there's a better way?
+class InstallPyInstallerTask(BaseTask):
+    version = '3.0'
 
     def do_task(self):
         os.chdir(os.getenv('BUILDDIR'))
-        marionette_windows.util.execute(
-            'cp ../thirdparty/py2exe-0.6.9.win32-py2.7.exe .')
-        marionette_windows.util.execute(
-            '7z x py2exe-0.6.9.win32-py2.7.exe')
         retval = marionette_windows.util.execute(
-            'cp -a PLATLIB/* $INSTDIR/python/Lib/site-packages/')
+            'LD_PRELOAD= $INSTPYTHON -m pip install pypiwin32 '
+            'https://github.com/pyinstaller/pyinstaller/archive/%s.zip' % self.version)
 
         return retval
 
     def get_desc(self):
-        return 'Installing py2exe'
+        return 'Installing PyInstaller %s' % self.version
 
     def is_successful(self):
         os.chdir(os.getenv('VAGRANTDIR'))
         retcode = marionette_windows.util.execute(
-            "LD_PRELOAD= $INSTPYTHON -c 'import py2exe'")
+            'LD_PRELOAD= $INSTPYTHON -m PyInstaller --help')
         return (retcode == 0)
 
 
@@ -338,24 +340,6 @@ class InstallRegex2DFATask(BaseTask):
             marionette_windows.util.execute(
                 'sed -i \'s/ ar / $(AR) /g\' Makefile')
 
-            # stdint is required under mingw for unint32_t
-            marionette_windows.util.execute(
-                'sed -i \'s/#include <Python.h>/#include <Python.h>\\n#include <stdint.h>/g\' src/cRegex2dfa.cc')
-
-            # these hardening flags don't work under mingw
-            marionette_windows.util.execute(
-                'sed -i "s/\'-fstack-protector-all\',//g" setup.py')
-            marionette_windows.util.execute(
-                'sed -i "s/\'-D_FORTIFY_SOURCE\',//g" setup.py')
-            marionette_windows.util.execute(
-                'sed -i "s/\'-fPIE\',//g" setup.py')
-
-            # regex2dfa setup.py libs are all messed up and hardcoded
-            marionette_windows.util.execute(
-                'sed -i "s/\'python2.7\',/\'mman\',\'dl\',\'psapi\'/g" setup.py')
-            marionette_windows.util.execute(
-                'sed -i "s/library_dirs=\[\'\.libs\'\],/library_dirs=[\'.libs\',\'\/home\/vagrant\/install\/mingw\/lib\'],/g" setup.py')
-
             # signal that we've patched regex2dfa
             marionette_windows.util.execute(
                 'touch regex2dfa.patched')
@@ -371,10 +355,21 @@ class InstallRegex2DFATask(BaseTask):
 
         marionette_windows.util.execute(
             'make')
+
+        # We built re2 and openfst ourselves, so we don't want regex2dfa to
+        # rebuild them.
         marionette_windows.util.execute(
-            'LD_PRELOAD= $INSTPYTHON setup.py build_ext -c mingw32')
+            "sed -i '/subprocess/d' setup.py")
+
+        # Use a relative path to regex2dfa.h
         marionette_windows.util.execute(
-            'LD_PRELOAD= $INSTPYTHON setup.py install')
+            'sed -i \'/^regex2dfa_header =/c\\regex2dfa_header = "src\/regex2dfa.h"\' regex2dfa_build.py')
+
+        # Use our built libraries and mingw
+        marionette_windows.util.execute(
+            'sed -i "s/library_dirs=\[\'\.libs\'\],/library_dirs=[\'.libs\',\'\/home\/vagrant\/install\/mingw\/lib\'],/g" regex2dfa_build.py')
+        marionette_windows.util.execute(
+            'LD_PRELOAD= $INSTPYTHON setup.py build_ext -I . -l mman,dl,psapi -c mingw32 install')
 
     def get_desc(self):
         return 'Installing regex2dfa'

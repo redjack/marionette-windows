@@ -21,7 +21,7 @@ def main():
         marionette_windows.tasks.InitWineTask,
         marionette_windows.tasks.InstallPythonTask,
         marionette_windows.tasks.InstallSetuptoolsTask,
-        marionette_windows.tasks.InstallPy2EXETask,
+        marionette_windows.tasks.InstallPyInstallerTask,
         marionette_windows.tasks.InstallWineWrappers,
         marionette_windows.tasks.InstallDlfcnTask,
         marionette_windows.tasks.InstallMmanTask,
